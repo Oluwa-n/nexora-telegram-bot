@@ -12,7 +12,7 @@ from telegram.ext import (
     filters,
 )
 
-# ===== Tavily =====
+# ================== Tavily ==================
 try:
     from tavily import TavilyClient
     TAVILY_AVAILABLE = True
@@ -28,8 +28,11 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
 logging.basicConfig(level=logging.INFO)
 
-# ================== AI CLIENTS ==================
-llm = InferenceClient(model="deepseek-ai/DeepSeek-V3.2-Exp", token=HF_TOKEN)
+# ================== AI CLIENT ==================
+llm = InferenceClient(
+    model="deepseek-ai/DeepSeek-V3.2-Exp",
+    token=HF_TOKEN
+)
 
 if TAVILY_AVAILABLE:
     tavily = TavilyClient(api_key=TAVILY_API_KEY)
@@ -41,7 +44,7 @@ user_sessions = {}
 SYSTEM_PROMPT = (
     "You are Nexora, a private and intelligent Telegram AI assistant. "
     "You NEVER mention searching, browsing, tools, APIs, models, or external sources. "
-    "If you have updated or real-world information, you present it naturally as existing knowledge."
+    "If you have updated or real-world information, you present it naturally."
 )
 
 # ================== HELPERS ==================
@@ -49,7 +52,7 @@ def needs_web_search(text: str) -> bool:
     keywords = [
         "latest", "today", "now", "current",
         "news", "price", "update", "recent",
-        "who won", "score", "happening","time"
+        "who won", "score", "happening", "time"
     ]
     return any(word in text.lower() for word in keywords)
 
@@ -57,7 +60,11 @@ def silent_web_search(query: str) -> str:
     if not TAVILY_AVAILABLE:
         return ""
     try:
-        result = tavily.search(query=query, max_results=5, include_answer=True)
+        result = tavily.search(
+            query=query,
+            max_results=5,
+            include_answer=True
+        )
         return result.get("answer") or ""
     except Exception as e:
         logging.error(f"Tavily search failed: {e}")
@@ -68,17 +75,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     await update.message.reply_text(
         f"👋 Hello {user.first_name}\n\n"
-        "🤖 *Nexora* is online.\nAsk me anything.",
-        parse_mode="Markdown"
+        "🤖 Nexora is online.\nAsk me anything."
     )
 
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
+
     await update.message.chat.send_action(ChatAction.TYPING)
 
     if user_id not in user_sessions:
-        user_sessions[user_id] = [{"role": "system", "content": SYSTEM_PROMPT}]
+        user_sessions[user_id] = [
+            {"role": "system", "content": SYSTEM_PROMPT}
+        ]
 
     # ---- Silent Web Context ----
     if TAVILY_AVAILABLE and needs_web_search(text):
@@ -86,10 +95,12 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if web_info:
             user_sessions[user_id].append({
                 "role": "system",
-                "content": f"Background knowledge for answering naturally:\n{web_info}"
+                "content": f"Background knowledge:\n{web_info}"
             })
 
-    user_sessions[user_id].append({"role": "user", "content": text})
+    user_sessions[user_id].append(
+        {"role": "user", "content": text}
+    )
 
     try:
         response = llm.chat_completion(
@@ -102,18 +113,16 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logging.error(e)
         reply = "⚠️ Something went wrong. Please try again."
 
-    user_sessions[user_id].append({"role": "assistant", "content": reply})
+    user_sessions[user_id].append(
+        {"role": "assistant", "content": reply}
+    )
+
     await update.message.reply_text(reply)
 
-# ================== RUN BOT ==================
-import asyncio
+# ================== RUN BOT (RAILWAY SAFE) ==================
+app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+app.add_handler(CommandHandler("start", start))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
 
-async def main():
-    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
-    print("✅ Nexora is running...")
-    await app.run_polling()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+print("✅ Nexora is running...")
+app.run_polling()
