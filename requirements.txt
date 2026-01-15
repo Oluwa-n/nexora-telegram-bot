@@ -1,4 +1,0 @@
-python-telegram-bot>=22.3
-huggingface-hub
-python-dotenv
-nest_asyncio
