@@ -1,4 +1,5 @@
 python-telegram-bot==21.6
 huggingface-hub
 python-dotenv
-tavily-python
+duckduckgo-search
+redis
