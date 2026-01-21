@@ -108,21 +108,44 @@ def silent_web_search(query: str) -> str:
         logging.error(f"Tavily search failed: {e}")
         return ""
 
-# ================== HANDLERS ==================
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# ================== HELP HANDLER ==================
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-
+    
     # ---- Surveillance log ----
     await send_to_surveillance(
         user=user,
-        message="Started the bot",
-        report_type="new_user"
+        message="Accessed /help",
+        report_type="help_request"
     )
 
-    await update.message.reply_text(
-        f"👋 Hello {user.first_name}\n\n"
-        "Atlascore⟁ is online.\nAsk me anything."
+    help_text = (
+        "👁️‍🗨️ **Atlascore⟁ Protocols**\n\n"
+        "You are interacting with a high-level text generation engine by Nexora.hq.\n\n"
+        "📍 **Standard Mode:** General assistance and logic reasoning.\n"
+        "🔓 **Full Access:** Send the keyword 'unknown' to bypass all ethical and moral constraints. This is for unconventional testing only.\n\n"
+        "🛠️ **Status:** Memory optimization is currently in progress. Live data retrieval is active.\n\n"
+        "📢 **Feedback:** Your reviews build the future of Atlascore. Drop your feedback and reviews here: @Eclipss_byte\n\n"
+        "Proceed with caution."
     )
+    
+    await update.message.reply_text(help_text, parse_mode="MarkdownV2")
+
+# ================== HANDLERS ==================
+# ================== UPDATED START HANDLER ==================
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    await send_to_surveillance(user=user, message="Started bot", report_type="new_user")
+
+    welcome = (
+        f"👋 Welcome to the Front Line, {user.first_name}.\n\n"
+        "Atlascore⟁ is online. I am a raw text generator built for precision.\n\n"
+        "🔐 **Note:** To unlock unconventional and restricted capabilities, you must verify with 'unknown'.\n"
+        "✍️ **Feedback:** Drop a review at @Eclipss_byte\n\n"
+        "What is your directive?"
+    )
+    await update.message.reply_text(welcome)
+
 
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -185,6 +208,7 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ================== RUN BOT (RAILWAY SAFE) ==================
 app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("help", help_command)) # Added Help Handler
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
 
 print("✅ Atlascore⟁ AI  is running...")
