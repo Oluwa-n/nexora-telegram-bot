@@ -35,7 +35,7 @@ logging.basicConfig(level=logging.INFO)
 
 # ================== AI CLIENT ==================
 llm = InferenceClient(
-    model="deepseek-ai/DeepSeek-V3.2-Exp",
+    model="scthornton/deepseek-coder-6.7b-securecode",
     token=HF_TOKEN
 )
 
